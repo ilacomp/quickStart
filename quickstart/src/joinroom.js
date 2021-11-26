@@ -2,6 +2,7 @@
 
 const { connect, createLocalVideoTrack, Logger } = require('twilio-video');
 const { isMobile } = require('./browser');
+const { VideoRecorder } = require("./videoRecording");
 
 const $leave = $('#leave-room');
 const $room = $('#room');
@@ -231,6 +232,33 @@ function trackPublished(publication, participant) {
   });
 }
 
+const getRecordingStream = (videoTrack, audioTrack, localAudio) => {
+  return new Promise((resolve, reject) => {
+    const recordingStream = VideoRecorder.streamFromTracks(
+      videoTrack,
+      audioTrack, // Remote audio will be left panned.
+      localAudio // Local audio will be right panned.
+    );
+    resolve(recordingStream);
+  });
+};
+
+function startVideoRecording(localAudio, videoTrack, audioTrack) {
+  try {
+    getRecordingStream(videoTrack, audioTrack, localAudio).then((recordingStream) => {
+      const videoRecorder = new VideoRecorder(recordingStream);
+      window.videoRecorder = videoRecorder;
+
+      setTimeout(() => {
+        videoRecorder.startRecording();
+        console.warn('===recording started===');
+      }, 4000);
+    });
+  } catch (error) {
+    console.error("startVideoRecording error", error);
+  }
+}
+
 /**
  * Join a Room.
  * @param token - the AccessToken used to join a Room
@@ -246,6 +274,7 @@ async function joinRoom(token, connectOptions) {
 
   // Save the LocalVideoTrack.
   let localVideoTrack = Array.from(room.localParticipant.videoTracks.values())[0].track;
+  let localAudioTrack = Array.from(room.localParticipant.audioTracks.values())[0].track;
 
   // Make the Room available in the JavaScript console for debugging.
   window.room = room;
@@ -270,6 +299,7 @@ async function joinRoom(token, connectOptions) {
       const remoteMediaStream = new window.MediaStream([pVideo, pAudio]);
       remoteParticipantConnected(participant, room, remoteMediaStream);
       console.warn('Got two remote tracks');
+      startVideoRecording(localAudioTrack.mediaStreamTrack, pVideo, pAudio);
     }
   });
 
@@ -361,6 +391,10 @@ async function joinRoom(token, connectOptions) {
 
       // Clear the Room reference used for debugging from the JavaScript console.
       window.room = null;
+      if (window.videoRecorder) {
+        window.videoRecorder.stopRecording();
+        console.warn('===recording stopped===');
+      }
 
       if (error) {
         // Reject the Promise with the TwilioError so that the Room selection
