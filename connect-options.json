@@ -1,0 +1,32 @@
+{
+  "bandwidthProfile": {
+    "video": {
+      "dominantSpeakerPriority": "high",
+      "mode": "collaboration",
+      "clientTrackSwitchOffControl": "auto",
+      "contentPreferencesMode": "auto"
+    }
+  },
+  "dominantSpeaker": true,
+  "maxAudioBitrate": 16000,
+  "preferredVideoCodecs": [
+    {
+      "codec": "VP8",
+      "simulcast": true
+    }
+  ],
+  "video": {
+    "height": 720,
+    "frameRate": 24,
+    "width": 1280,
+    "deviceId": {
+      "exact": "5b0bc26ddbfd2d630182340a3a27c7512e5cdc08f9562e07b44bc6b55fae90ae"
+    }
+  },
+  "audio": {
+    "deviceId": {
+      "exact": "default"
+    }
+  },
+  "name": "Martha"
+}
