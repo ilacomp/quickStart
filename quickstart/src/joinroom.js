@@ -177,6 +177,21 @@ function participantConnected(participant, room) {
   });
 }
 
+function remoteParticipantConnected(participant, room, mediaStream) {
+  const { identity, sid } = participant;
+
+  // Add a container for the Participant's media.
+  const $container = $(`<div class="participant" data-identity="${identity}" id="${sid}">
+    <video autoplay muted="false"></video>
+  </div>`);
+
+  const $media = $(`video`, $container);
+  const mediaEl = $media.get(0);
+  mediaEl.srcObject = mediaStream;
+
+  $participants.append($container);
+}
+
 /**
  * Handle a disconnected Participant.
  * @param participant - the disconnected Participant
@@ -227,7 +242,6 @@ async function joinRoom(token, connectOptions) {
   logger.setLevel('debug');
 
   // Join to the Room with the given AccessToken and ConnectOptions.
-  console.warn('connectOptions:', connectOptions);
   const room = await connect(token, connectOptions);
 
   // Save the LocalVideoTrack.
@@ -239,31 +253,53 @@ async function joinRoom(token, connectOptions) {
   // Handle the LocalParticipant's media.
   participantConnected(room.localParticipant, room);
 
-  // Subscribe to the media published by RemoteParticipants already in the Room.
-  room.participants.forEach(participant => {
-    participantConnected(participant, room);
+  //Handle remove participant
+  const participant = room.participants.values().next().value;
+  let pVideo, pAudio;
+
+  participant.on("trackSubscribed", (track) => {
+    if (track.kind === "audio") {
+      pAudio = track.mediaStreamTrack;
+      console.warn("audio Track subscribed");
+    }
+    if (track.kind === "video") {
+      pVideo = track.mediaStreamTrack;
+      console.warn("video Track subscribed");
+    }
+    if (pAudio && pVideo) {
+      const remoteMediaStream = new window.MediaStream([pVideo, pAudio]);
+      remoteParticipantConnected(participant, room, remoteMediaStream);
+      console.warn('Got two remote tracks');
+    }
   });
 
-  // Subscribe to the media published by RemoteParticipants joining the Room later.
-  room.on('participantConnected', participant => {
-    participantConnected(participant, room);
-  });
-
+    //
+  //
+  // // Subscribe to the media published by RemoteParticipants already in the Room.
+  // room.participants.forEach(participant => {
+  //   participantConnected(participant, room);
+  // });
+  //
+  // // Subscribe to the media published by RemoteParticipants joining the Room later.
+  // room.on('participantConnected', participant => {
+  //   participantConnected(participant, room);
+  // });
+  //
   // Handle a disconnected RemoteParticipant.
   room.on('participantDisconnected', participant => {
     participantDisconnected(participant, room);
   });
-
-  // Set the current active Participant.
-  setCurrentActiveParticipant(room);
-
-  // Update the active Participant when changed, only if the user has not
-  // pinned any particular Participant as the active Participant.
-  room.on('dominantSpeakerChanged', () => {
-    if (!isActiveParticipantPinned) {
-      setCurrentActiveParticipant(room);
-    }
-  });
+  //
+  // // Set the current active Participant.
+  // setCurrentActiveParticipant(room);
+  //
+  // // Update the active Participant when changed, only if the user has not
+  // // pinned any particular Participant as the active Participant.
+  // room.on('dominantSpeakerChanged', () => {
+  //   if (!isActiveParticipantPinned) {
+  //     setCurrentActiveParticipant(room);
+  //   }
+  // });
 
   // Leave the Room when the "Leave Room" button is clicked.
   $leave.click(function onLeave() {

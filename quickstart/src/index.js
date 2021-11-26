@@ -16,7 +16,7 @@ const $showErrorModal = $('#show-error', $modals);
 const $joinRoomModal = $('#join-room', $modals);
 
 // ConnectOptions settings for a video web application.
-const connectOptions = {
+const connectOptions_old = {
   // Available only in Small Group or Group Rooms only. Please set "Room Type"
   // to "Group" or "Small Group" in your Twilio Console:
   // https://www.twilio.com/console/video/configure
@@ -47,7 +47,7 @@ const connectOptions = {
   video: { height: 720, frameRate: 24, width: 1280 }
 };
 
-const connectOptions_test = {
+const connectOptions = {
   preferredVideoCodecs: ["VP8"],
   logLevel: "INFO",
   video: {}
